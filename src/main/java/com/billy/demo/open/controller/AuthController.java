@@ -2,6 +2,7 @@ package com.billy.demo.open.controller;
 
 import com.billy.demo.open.entity.wx.WxVerifyMsg;
 import com.billy.demo.open.service.AuthService;
+import com.billy.demo.open.task.ComponentAccessTokenTask;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,8 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+    @Autowired
+    private ComponentAccessTokenTask componentAccessTokenTask;
 
     /**
      * 接收微信发过来的认证事件推送并处理
@@ -56,6 +59,25 @@ public class AuthController {
     @ResponseBody
     public String getComponentVerifyTicket() {
         return authService.getComponentVerifyTicket();
+    }
+
+    /**
+     * 获取Component_Access_Token
+     */
+    @RequestMapping("getComponentAccessToken")
+    @ResponseBody
+    public String getComponentAccessToken() {
+        return componentAccessTokenTask.getComponentAccessToken();
+    }
+
+    /**
+     * 刷新Component_Access_Token
+     */
+    @RequestMapping("refreshComponentAccessToken")
+    @ResponseBody
+    public String refreshComponentAccessToken() {
+        componentAccessTokenTask.doComponentAccessTokenRefresh();
+        return componentAccessTokenTask.getComponentAccessToken();
     }
 
 }
