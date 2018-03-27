@@ -2,7 +2,9 @@ package com.billy.demo.open.controller;
 
 import com.billy.demo.open.entity.wx.WxVerifyMsg;
 import com.billy.demo.open.service.AuthService;
+import com.billy.demo.open.service.WXDataGatherService;
 import com.billy.demo.open.task.ComponentAccessTokenTask;
+import com.billy.demo.open.util.ServerPropertiesUtil;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URLEncoder;
 
 /**
  * 处理微信发过来的认证事件推送
@@ -30,6 +34,8 @@ public class AuthController {
     private AuthService authService;
     @Autowired
     private ComponentAccessTokenTask componentAccessTokenTask;
+    @Autowired
+    private WXDataGatherService wxDataGatherService;
 
     /**
      * 接收微信发过来的认证事件推送并处理
@@ -78,6 +84,33 @@ public class AuthController {
     public String refreshComponentAccessToken() {
         componentAccessTokenTask.doComponentAccessTokenRefresh();
         return componentAccessTokenTask.getComponentAccessToken();
+    }
+
+    /**
+     * 重定向到微信进行授权
+     * @param response response
+     */
+    @RequestMapping("redirectToAuth")
+    public void redirectToAuth(HttpServletResponse response) throws IOException {
+        String redirectUri = ServerPropertiesUtil.getBaseUrl() + "/auth/authorized";
+        String encodeRedirectUri = URLEncoder.encode(redirectUri, "utf-8");
+
+        String url = "https://mp.weixin.qq.com/cgi-bin/componentloginpage?component_appid="
+                + ServerPropertiesUtil.getAppId() + "&pre_auth_code=" + wxDataGatherService.getNewPreAuthCode()
+                + "&redirect_uri=" + encodeRedirectUri + "&auth_type=1";
+        response.sendRedirect(url);
+    }
+
+
+    /**
+     * 微信公众平台完成授权后的回调请求
+     *
+     */
+    @RequestMapping("authorized")
+    @ResponseBody
+    public String authorized() {
+        LOG.debug("wx notify");
+        return "success";
     }
 
 }
